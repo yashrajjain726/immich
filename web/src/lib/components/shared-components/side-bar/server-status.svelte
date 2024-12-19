@@ -12,24 +12,32 @@
   } from '@immich/sdk';
   import Icon from '$lib/components/elements/icon.svelte';
   import { mdiAlert } from '@mdi/js';
+  import { userInteraction } from '$lib/stores/user.svelte';
 
   const { serverVersion, connected } = websocketStore;
 
-  let isOpen = false;
-
-  $: isMain = info?.sourceRef === 'main' && info.repository === 'immich-app/immich';
-  $: version = $serverVersion ? `v${$serverVersion.major}.${$serverVersion.minor}.${$serverVersion.patch}` : null;
-
-  let info: ServerAboutResponseDto;
-  let versions: ServerVersionHistoryResponseDto[] = [];
+  let isOpen = $state(false);
+  let info: ServerAboutResponseDto | undefined = $state();
+  let versions: ServerVersionHistoryResponseDto[] = $state([]);
 
   onMount(async () => {
+    if (userInteraction.aboutInfo && userInteraction.versions && $serverVersion) {
+      info = userInteraction.aboutInfo;
+      versions = userInteraction.versions;
+      return;
+    }
     await requestServerInfo();
     [info, versions] = await Promise.all([getAboutInfo(), getVersionHistory()]);
+    userInteraction.aboutInfo = info;
+    userInteraction.versions = versions;
   });
+  let isMain = $derived(info?.sourceRef === 'main' && info.repository === 'immich-app/immich');
+  let version = $derived(
+    $serverVersion ? `v${$serverVersion.major}.${$serverVersion.minor}.${$serverVersion.patch}` : null,
+  );
 </script>
 
-{#if isOpen}
+{#if isOpen && info}
   <ServerAboutModal onClose={() => (isOpen = false)} {info} {versions} />
 {/if}
 
@@ -50,9 +58,9 @@
 
   <div class="flex justify-between justify-items-center">
     {#if $connected && version}
-      <button type="button" on:click={() => (isOpen = true)} class="dark:text-immich-gray flex gap-1">
+      <button type="button" onclick={() => (isOpen = true)} class="dark:text-immich-gray flex gap-1">
         {#if isMain}
-          <Icon path={mdiAlert} size="1.5em" color="#ffcc4d" /> {info.sourceRef}
+          <Icon path={mdiAlert} size="1.5em" color="#ffcc4d" /> {info?.sourceRef}
         {:else}
           {version}
         {/if}
