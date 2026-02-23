@@ -18651,6 +18651,22 @@
           "data": {
             "$ref": "#/components/schemas/OnThisDayDto"
           },
+          "hideAt": {
+            "description": "Date when memory should be hidden",
+            "format": "date-time",
+            "type": "string",
+            "x-immich-history": [
+              {
+                "version": "v2.6.0",
+                "state": "Added"
+              },
+              {
+                "version": "v2.6.0",
+                "state": "Stable"
+              }
+            ],
+            "x-immich-state": "Stable"
+          },
           "isSaved": {
             "description": "Is memory saved",
             "type": "boolean"
@@ -18664,6 +18680,22 @@
             "description": "Date when memory was seen",
             "format": "date-time",
             "type": "string"
+          },
+          "showAt": {
+            "description": "Date when memory should be shown",
+            "format": "date-time",
+            "type": "string",
+            "x-immich-history": [
+              {
+                "version": "v2.6.0",
+                "state": "Added"
+              },
+              {
+                "version": "v2.6.0",
+                "state": "Stable"
+              }
+            ],
+            "x-immich-state": "Stable"
           },
           "type": {
             "allOf": [
