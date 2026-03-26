@@ -248,6 +248,7 @@ export const getAssetActions = ($t: MessageFormatter, asset: AssetResponseDto) =
       !asset.originalPath.toLowerCase().endsWith('.gif') &&
       !asset.originalPath.toLowerCase().endsWith('.svg'),
     onAction: () => assetViewerManager.openEditor(),
+    shortcuts: [{ key: 'e' }],
   };
 
   const RefreshFacesJob: ActionItem = {
