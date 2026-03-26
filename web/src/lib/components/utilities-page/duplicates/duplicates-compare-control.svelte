@@ -6,7 +6,6 @@
   import { authManager } from '$lib/managers/auth-manager.svelte';
   import { handlePromiseError } from '$lib/utils';
   import { getNextAsset, getPreviousAsset } from '$lib/utils/asset-utils';
-  import { suggestDuplicate } from '$lib/utils/duplicate-utils';
   import { navigate } from '$lib/utils/navigation';
   import { getAssetInfo, type AssetResponseDto } from '@immich/sdk';
   import { Button } from '@immich/ui';
@@ -17,24 +16,27 @@
 
   interface Props {
     assets: AssetResponseDto[];
+    suggestedKeepAssetIds: string[];
     onResolve: (duplicateAssetIds: string[], trashIds: string[]) => void;
     onStack: (assets: AssetResponseDto[]) => void;
   }
 
-  let { assets, onResolve, onStack }: Props = $props();
+  let { assets, suggestedKeepAssetIds, onResolve, onStack }: Props = $props();
   // eslint-disable-next-line svelte/no-unnecessary-state-wrap
   let selectedAssetIds = $state(new SvelteSet<string>());
   let trashCount = $derived(assets.length - selectedAssetIds.size);
 
   onMount(() => {
-    const suggestedAsset = suggestDuplicate(assets);
-
-    if (!suggestedAsset) {
-      selectedAssetIds = new SvelteSet(assets[0].id);
+    if (suggestedKeepAssetIds.length > 0) {
+      for (const id of suggestedKeepAssetIds) {
+        selectedAssetIds.add(id);
+      }
       return;
     }
 
-    selectedAssetIds.add(suggestedAsset.id);
+    if (assets.length > 0) {
+      selectedAssetIds.add(assets[0].id);
+    }
   });
 
   onDestroy(() => {
