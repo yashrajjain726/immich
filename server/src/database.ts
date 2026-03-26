@@ -5,6 +5,7 @@ import {
   AssetFileType,
   AssetType,
   AssetVisibility,
+  ChecksumAlgorithm,
   MemoryType,
   Permission,
   PluginContext,
@@ -112,6 +113,7 @@ export type Memory = {
 export type Asset = {
   id: string;
   checksum: Buffer<ArrayBufferLike>;
+  checksumAlgorithm: ChecksumAlgorithm;
   deviceAssetId: string;
   deviceId: string;
   fileCreatedAt: Date;
@@ -330,6 +332,7 @@ export const columns = {
   asset: [
     'asset.id',
     'asset.checksum',
+    'asset.checksumAlgorithm',
     'asset.deviceAssetId',
     'asset.deviceId',
     'asset.fileCreatedAt',
