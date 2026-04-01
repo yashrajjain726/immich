@@ -312,16 +312,10 @@ export class PersonRepository {
     return this.db
       .selectFrom('person')
       .selectAll('person')
-      .where((eb) =>
-        eb.and([
-          eb('person.ownerId', '=', userId),
-          eb.or([
-            eb(eb.fn('lower', ['person.name']), 'like', `${personName.toLowerCase()}%`),
-            eb(eb.fn('lower', ['person.name']), 'like', `% ${personName.toLowerCase()}%`),
-          ]),
-        ]),
-      )
-      .limit(1000)
+      .where('person.ownerId', '=', userId)
+      .where(() => sql`f_unaccent("person"."name") %>> f_unaccent(${personName})`)
+      .orderBy(sql`f_unaccent("person"."name") <->>> f_unaccent(${personName})`)
+      .limit(100)
       .$if(!withHidden, (qb) => qb.where('person.isHidden', '=', false))
       .execute();
   }
