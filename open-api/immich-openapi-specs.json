@@ -17721,11 +17721,15 @@
           },
           "filesize": {
             "type": "number"
+          },
+          "timezone": {
+            "type": "string"
           }
         },
         "required": [
           "filename",
-          "filesize"
+          "filesize",
+          "timezone"
         ],
         "type": "object"
       },
