@@ -18,7 +18,6 @@
   import { closeWebsocketConnection, openWebsocketConnection, websocketStore } from '$lib/stores/websocket';
   import { copyToClipboard } from '$lib/utils';
   import { maintenanceShouldRedirect } from '$lib/utils/maintenance';
-  import { isAssetViewerRoute } from '$lib/utils/navigation';
   import { getServerConfig } from '@immich/sdk';
   import {
     CommandPaletteProvider,
@@ -107,7 +106,11 @@
       sidebarStore.reset();
     }
 
-    if (isAssetViewerRoute(from) && isAssetViewerRoute(to)) {
+    const fromRouteId = from?.route?.id;
+    const toRouteId = to?.route?.id;
+    const sameRouteTransition = fromRouteId && toRouteId && fromRouteId === toRouteId;
+
+    if (sameRouteTransition) {
       return;
     }
 
