@@ -5,6 +5,7 @@
   import { normalizeSearchString } from '$lib/utils/string-utils';
   import { searchUsers, type AlbumResponseDto, type UserResponseDto } from '@immich/sdk';
   import { FormModal, ListButton, LoadingSpinner, Stack, Text } from '@immich/ui';
+  import { sortBy } from 'lodash-es';
   import { onMount } from 'svelte';
   import { t } from 'svelte-i18n';
   import { SvelteMap } from 'svelte/reactivity';
@@ -21,9 +22,13 @@
   let users: UserResponseDto[] = $state([]);
   const excludedUserIds = $derived([album.ownerId, ...album.albumUsers.map(({ user: { id } }) => id)]);
   const filteredUsers = $derived(
-    users.filter(
-      (user) =>
-        !excludedUserIds.includes(user.id) && normalizeSearchString(user.name).includes(normalizeSearchString(search)),
+    sortBy(
+      users.filter(
+        (user) =>
+          !excludedUserIds.includes(user.id) &&
+          normalizeSearchString(user.name).includes(normalizeSearchString(search)),
+      ),
+      ['name'],
     ),
   );
   const selectedUsers = new SvelteMap<string, UserResponseDto>();
