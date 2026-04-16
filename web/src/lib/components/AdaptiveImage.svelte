@@ -148,7 +148,7 @@
   });
 </script>
 
-<div class="relative h-full w-full overflow-hidden will-change-transform" bind:this={ref}>
+<div class="relative h-full w-full overflow-hidden" bind:this={ref}>
   {@render backdrop?.()}
 
   <div
