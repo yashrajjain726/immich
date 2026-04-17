@@ -12,6 +12,7 @@ import {
   ChangePasswordDto,
   LoginCredentialDto,
   LogoutResponseDto,
+  OAuthBackchannelLogoutDto,
   OAuthCallbackDto,
   OAuthConfigDto,
   PinCodeChangeDto,
@@ -89,6 +90,40 @@ export class AuthService extends BaseService {
       successful: true,
       redirectUri: await this.getLogoutEndpoint(authType),
     };
+  }
+
+  async backchannelLogout(dto: OAuthBackchannelLogoutDto): Promise<void> {
+    const { oauth } = await this.getConfig({ withCache: false });
+    if (!oauth.enabled) {
+      throw new BadRequestException('Received backchannel logout request but OAuth is not enabled');
+    }
+
+    let claims;
+    try {
+      claims = await this.oauthRepository.validateLogoutToken(oauth, dto.logout_token);
+    } catch (error: Error | any) {
+      this.logger.error(`Error backchannel logout: ${error.message}`);
+      this.logger.error(error);
+
+      throw new BadRequestException('Error backchannel logout: token validation failed');
+    }
+
+    if (!claims) {
+      throw new BadRequestException('Invalid logout token: no claims found');
+    }
+
+    if (!claims.sub && !claims.sid) {
+      throw new BadRequestException('Invalid logout token: it must contain either a sub or a sid claim');
+    }
+
+    const deletedSessionIds = await this.sessionRepository.invalidateOAuth({
+      oauthSid: claims.sid,
+      oauthId: claims.sub,
+    });
+
+    for (const sessionId of deletedSessionIds) {
+      await this.eventRepository.emit('SessionDelete', { sessionId });
+    }
   }
 
   async changePassword(auth: AuthDto, dto: ChangePasswordDto): Promise<UserAdminResponseDto> {
@@ -276,7 +311,12 @@ export class AuthService extends BaseService {
     }
 
     const url = this.resolveRedirectUri(oauth, dto.url);
-    const profile = await this.oauthRepository.getProfile(oauth, url, expectedState, codeVerifier);
+    const { profile, sid: oauthSid } = await this.oauthRepository.getProfileAndOAuthSid(
+      oauth,
+      url,
+      expectedState,
+      codeVerifier,
+    );
     const normalizedEmail = profile.email ? profile.email.trim().toLowerCase() : undefined;
     const { autoRegister, defaultStorageQuota, storageLabelClaim, storageQuotaClaim, roleClaim } = oauth;
     this.logger.debug(`Logging in with OAuth: ${JSON.stringify(profile)}`);
@@ -342,7 +382,7 @@ export class AuthService extends BaseService {
       await this.syncProfilePicture(user, profile.picture);
     }
 
-    return this.createLoginResponse(user, loginDetails);
+    return this.createLoginResponse(user, loginDetails, oauthSid);
   }
 
   private async syncProfilePicture(user: UserAdmin, url: string) {
@@ -380,11 +420,18 @@ export class AuthService extends BaseService {
     }
 
     const { oauth } = await this.getConfig({ withCache: false });
-    const { sub: oauthId } = await this.oauthRepository.getProfile(oauth, dto.url, expectedState, codeVerifier);
+    const {
+      profile: { sub: oauthId },
+      sid,
+    } = await this.oauthRepository.getProfileAndOAuthSid(oauth, dto.url, expectedState, codeVerifier);
     const duplicate = await this.userRepository.getByOAuthId(oauthId);
     if (duplicate && duplicate.id !== auth.user.id) {
       this.logger.warn(`OAuth link account failed: sub is already linked to another user (${duplicate.email}).`);
       throw new BadRequestException('This OAuth account has already been linked to another user.');
+    }
+
+    if (auth.session) {
+      await this.sessionRepository.update(auth.session.id, { oauthSid: sid });
     }
 
     const user = await this.userRepository.update(auth.user.id, { oauthId });
@@ -392,6 +439,10 @@ export class AuthService extends BaseService {
   }
 
   async unlink(auth: AuthDto): Promise<UserAdminResponseDto> {
+    if (auth.session) {
+      await this.sessionRepository.update(auth.session.id, { oauthSid: null });
+    }
+
     const user = await this.userRepository.update(auth.user.id, { oauthId: '' });
     return mapUserAdmin(user);
   }
@@ -548,7 +599,7 @@ export class AuthService extends BaseService {
     await this.sessionRepository.update(auth.session.id, { pinExpiresAt: null });
   }
 
-  private async createLoginResponse(user: UserAdmin, loginDetails: LoginDetails) {
+  private async createLoginResponse(user: UserAdmin, loginDetails: LoginDetails, oauthSid?: string) {
     const token = this.cryptoRepository.randomBytesAsText(32);
     const hashed = this.cryptoRepository.hashSha256(token);
 
@@ -558,6 +609,7 @@ export class AuthService extends BaseService {
       deviceType: loginDetails.deviceType,
       appVersion: loginDetails.appVersion,
       userId: user.id,
+      oauthSid: oauthSid ?? null,
     });
 
     return mapLoginResponse(user, token);

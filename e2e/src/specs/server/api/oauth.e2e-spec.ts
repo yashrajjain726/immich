@@ -1,9 +1,10 @@
-import { OAuthClient, OAuthUser } from '@immich/e2e-auth-server';
+import { OAuthClient, OAuthUser, generateLogoutToken } from '@immich/e2e-auth-server';
 import {
   LoginResponseDto,
   SystemConfigOAuthDto,
   getConfigDefaults,
   getMyUser,
+  getSessions,
   startOAuth,
   updateConfig,
 } from '@immich/sdk';
@@ -330,6 +331,50 @@ describe(`/oauth`, () => {
           userId,
           userEmail: 'oauth-user3@immich.app',
         });
+      });
+    });
+  });
+
+  describe(`POST /oauth/backchannel-logout`, () => {
+    it(`should throw an error if the logout_token is not provided`, async () => {
+      const { status, body } = await request(app).post('/oauth/backchannel-logout').send({});
+      expect(status).toBe(400);
+      expect(body).toEqual(errorDto.badRequest(['[logout_token] Invalid input: expected string, received undefined']));
+    });
+
+    it(`should throw an error if an invalid logout token is provided`, async () => {
+      const { status, body } = await request(app)
+        .post('/oauth/backchannel-logout')
+        .send({ logout_token: 'invalid token' });
+      expect(status).toBe(400);
+      expect(body).toEqual(errorDto.badRequest('Error backchannel logout: token validation failed'));
+    });
+
+    it(`should logout user if a valid logout token is provided`, async () => {
+      await setupOAuth(admin.accessToken, {
+        enabled: true,
+        clientId: OAuthClient.DEFAULT,
+        clientSecret: OAuthClient.DEFAULT,
+        autoRegister: true,
+        signingAlgorithm: 'RS256',
+        buttonText: 'Login with Immich',
+      });
+
+      const callbackParams = await loginWithOAuth('backchannel-logout-user');
+      const { status: callbackStatus, body: callbackBody } = await request(app)
+        .post('/oauth/callback')
+        .send(callbackParams);
+      expect(callbackStatus).toBe(201);
+
+      await expect(getSessions({ headers: asBearerAuth(callbackBody.accessToken) })).resolves.toHaveLength(1);
+
+      const logoutToken = await generateLogoutToken('http://0.0.0.0:2286', 'backchannel-logout-user');
+      const { status, body } = await request(app).post('/oauth/backchannel-logout').send({ logout_token: logoutToken });
+      expect(status).toBe(200);
+      expect(body).toMatchObject({});
+
+      await expect(getSessions({ headers: asBearerAuth(callbackBody.accessToken) })).rejects.toMatchObject({
+        status: 401,
       });
     });
   });

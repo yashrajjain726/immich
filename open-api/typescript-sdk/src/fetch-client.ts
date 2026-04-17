@@ -1409,6 +1409,10 @@ export type OAuthAuthorizeResponseDto = {
     /** OAuth authorization URL */
     url: string;
 };
+export type OAuthBackchannelLogoutDto = {
+    /** OAuth logout token */
+    logout_token: string;
+};
 export type OAuthCallbackDto = {
     /** OAuth code verifier (PKCE) */
     codeVerifier?: string;
@@ -4907,6 +4911,18 @@ export function startOAuth({ oAuthConfigDto }: {
         ...opts,
         method: "POST",
         body: oAuthConfigDto
+    })));
+}
+/**
+ * Backchannel OAuth logout
+ */
+export function logoutOAuth({ oAuthBackchannelLogoutDto }: {
+    oAuthBackchannelLogoutDto: OAuthBackchannelLogoutDto;
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchText("/oauth/backchannel-logout", oazapfts.form({
+        ...opts,
+        method: "POST",
+        body: oAuthBackchannelLogoutDto
     })));
 }
 /**

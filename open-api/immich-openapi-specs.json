@@ -7359,6 +7359,38 @@
         "x-immich-state": "Stable"
       }
     },
+    "/oauth/backchannel-logout": {
+      "post": {
+        "description": "Logout the OAuth account and invalidate the session specified by the sid claim or all sessions if the sid claim is not present.",
+        "operationId": "logoutOAuth",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/OAuthBackchannelLogoutDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Backchannel OAuth logout",
+        "tags": [
+          "Authentication"
+        ],
+        "x-immich-history": [
+          {
+            "version": "v2",
+            "state": "Added"
+          }
+        ]
+      }
+    },
     "/oauth/callback": {
       "post": {
         "description": "Complete the OAuth authorization process by exchanging the authorization code for a session token.",
@@ -19028,6 +19060,18 @@
         },
         "required": [
           "url"
+        ],
+        "type": "object"
+      },
+      "OAuthBackchannelLogoutDto": {
+        "properties": {
+          "logout_token": {
+            "description": "OAuth logout token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "logout_token"
         ],
         "type": "object"
       },
