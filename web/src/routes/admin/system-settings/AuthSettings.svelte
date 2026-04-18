@@ -1,7 +1,6 @@
 <script lang="ts">
   import SettingAccordion from '$lib/components/shared-components/settings/setting-accordion.svelte';
   import SettingInputField from '$lib/components/shared-components/settings/setting-input-field.svelte';
-  import SettingSelect from './setting-select.svelte';
   import SettingSwitch from '$lib/components/shared-components/settings/setting-switch.svelte';
   import SettingButtonsRow from '$lib/components/shared-components/settings/SystemConfigButtonRow.svelte';
   import { SettingInputFieldType } from '$lib/constants';
@@ -15,6 +14,7 @@
   import { mdiRestart } from '@mdi/js';
   import { t } from 'svelte-i18n';
   import { fade } from 'svelte/transition';
+  import SettingSelect from './setting-select.svelte';
 
   const disabled = $derived(featureFlagsManager.value.configFile);
   const config = $derived(systemConfigManager.value);
@@ -172,6 +172,16 @@
                 required={true}
                 disabled={disabled || !configToEdit.oauth.enabled}
                 isEdited={!(configToEdit.oauth.prompt === config.oauth.prompt)}
+              />
+
+              <SettingInputField
+                inputType={SettingInputFieldType.TEXT}
+                label="end_session_endpoint"
+                description={$t('admin.oauth_end_session_url_description')}
+                bind:value={configToEdit.oauth.endSessionEndpoint}
+                required={false}
+                disabled={disabled || !configToEdit.oauth.enabled}
+                isEdited={!(configToEdit.oauth.endSessionEndpoint === config.oauth.endSessionEndpoint)}
               />
 
               <SettingInputField

@@ -104,6 +104,7 @@ export type SystemConfig = {
     defaultStorageQuota: number | null;
     enabled: boolean;
     issuerUrl: string;
+    endSessionEndpoint: string;
     mobileOverrideEnabled: boolean;
     mobileRedirectUri: string;
     prompt: string;
@@ -297,6 +298,7 @@ export const defaults = Object.freeze<SystemConfig>({
     defaultStorageQuota: null,
     enabled: false,
     issuerUrl: '',
+    endSessionEndpoint: '',
     mobileOverrideEnabled: false,
     mobileRedirectUri: '',
     prompt: '',

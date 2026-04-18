@@ -24331,6 +24331,10 @@
             "description": "Enabled",
             "type": "boolean"
           },
+          "endSessionEndpoint": {
+            "description": "End session endpoint",
+            "type": "string"
+          },
           "issuerUrl": {
             "description": "Issuer URL",
             "type": "string"
@@ -24390,6 +24394,7 @@
           "clientSecret",
           "defaultStorageQuota",
           "enabled",
+          "endSessionEndpoint",
           "issuerUrl",
           "mobileOverrideEnabled",
           "mobileRedirectUri",
